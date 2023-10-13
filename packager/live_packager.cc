@@ -11,6 +11,7 @@
 #include <packager/file/file.h>
 #include <packager/file/file_closer.h>
 #include <packager/live_packager.h>
+#include "live_packager.h"
 
 namespace shaka {
 
@@ -139,12 +140,14 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
       ss << std::setw(4) << std::setfill('0') << segment_count_ << ".m4s";
       std::ofstream fout(ss.str(), std::ios::binary);
       fout.write(reinterpret_cast<const char*>(segmentBuffer.data()), segmentBuffer.size());
+      segment_ = shaka::Segment(segmentBuffer.data(), segmentBuffer.size());
     }
 
     {
       if(segment_count_ == 1) {
         std::ofstream fout(init_segment_fname, std::ios::binary);
         fout.write(reinterpret_cast<const char*>(initBuffer.data()), initBuffer.size());
+        init_segment_ = shaka::Segment(initBuffer.data(), initBuffer.size());
       }
     }
   }
@@ -152,4 +155,10 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   return status;
 }
 
+const Segment& LivePackager::GetInitSegment() const {
+  return init_segment_;
+}
+const Segment& LivePackager::GetSegment() const {
+  return segment_;
+}
 }  // namespace shaka

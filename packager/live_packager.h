@@ -21,6 +21,9 @@ namespace shaka {
 
 class Segment {
 public:
+  Segment() = default;
+  ~Segment() = default;
+
   Segment(const uint8_t *data, size_t size); 
   explicit Segment(const char *fname); 
 
@@ -41,12 +44,16 @@ public:
   ~LivePackager();
 
   Status Package(const Segment &init, const Segment &segment);
+  const Segment &GetInitSegment() const;
+  const Segment &GetSegment() const;
 
   LivePackager(const LivePackager&) = delete;
   LivePackager& operator=(const LivePackager&) = delete;
 
 private:
   uint64_t segment_count_ {0};
+  shaka::Segment init_segment_;
+  shaka::Segment segment_;
 };
 
 }  // namespace shaka
