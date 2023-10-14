@@ -1,11 +1,11 @@
-// Copyright 2020 Google LLC. All rights reserved.
+// Copyright TBD
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-#ifndef PACKAGER_LIB_H_
-#define PACKAGER_LIB_H_
+#ifndef PACKAGER_LIVE_PACKAGER_H_
+#define PACKAGER_LIVE_PACKAGER_H_
 
 #include <memory>
 #include <string>
@@ -58,4 +58,4 @@ private:
 
 }  // namespace shaka
 
-#endif  // PACKAGER_LIB_H_
+#endif  // PACKAGER_LIVE_PACKAGER_H_

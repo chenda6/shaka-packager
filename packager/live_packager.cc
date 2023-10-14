@@ -67,10 +67,9 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   callback_params.read_func = [&file](const std::string &name, 
                                       void *buffer,
                                       uint64_t size) {
-    std::cout << "read_func called: size: " << size << std::endl;
-
+    // std::cout << "read_func called: size: " << size << std::endl;
     const auto n = file->Read(buffer, size);
-    std::cout << "read size: " << n << std::endl;
+    // std::cout << "read size: " << n << std::endl;
     return n;
   };
 
@@ -80,7 +79,7 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   callback_params.write_func = [&segmentBuffer](const std::string &name,
                                                 const void *data,
                                                 uint64_t size) {
-    std::cout << "write_func called: size: " << size << std::endl;
+    // std::cout << "write_func called: size: " << size << std::endl;
     auto *ptr = reinterpret_cast<const uint8_t*>(data);
     std::copy(ptr, ptr + size, std::back_inserter(segmentBuffer));
     return size;
@@ -89,7 +88,7 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   init_callback_params.write_func = [&initBuffer](const std::string &name,
                                                   const void *data,
                                                   uint64_t size) {
-    std::cout << "init_write_func called: size: " << size << std::endl;
+    // std::cout << "init_write_func called: size: " << size << std::endl;
     // TODO: this gets called more than once, why?
     // TODO: this is a workaround to write this only once 
     if(initBuffer.size() == 0) {
