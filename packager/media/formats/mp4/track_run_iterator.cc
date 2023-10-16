@@ -352,7 +352,7 @@ bool TrackRunIterator::Init(const MovieFragment& moof) {
           default_per_sample_iv_size, &sample_encryption_entries));
     }
 
-    int64_t run_start_dts = traf.uuid_exists ?
+    int64_t run_start_dts = traf.smooth_uuid.tfxd_exists ?
         traf.smooth_uuid.time 
         : 
         traf.decode_time_absent ? 

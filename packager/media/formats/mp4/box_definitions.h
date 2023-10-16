@@ -723,6 +723,7 @@ struct SmoothUUID : FullBox {
 
   uint64_t time = 0u;
   uint64_t duration = 0u;
+  bool tfxd_exists = false;
 };
 
 struct MovieFragmentHeader : FullBox {
