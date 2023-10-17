@@ -35,7 +35,6 @@ public:
 
 private:
   std::vector<uint8_t> data_;
-  uint64_t sequence_number_ {0};
 };
 
 struct LiveConfig {
@@ -59,8 +58,6 @@ class LivePackager {
 public:
   LivePackager(const LiveConfig &config);
   ~LivePackager();
-
-  void Init();
 
   Status Package(const Segment &init, const Segment &segment);
   const Segment &GetInitSegment() const;
