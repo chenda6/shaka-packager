@@ -38,10 +38,29 @@ private:
   uint64_t sequence_number_ {0};
 };
 
+struct LiveConfig {
+  enum class StreamingProtocol {
+    DASH,
+    HLS,
+  };
+
+  enum class TrackType {
+    AUDIO,
+    VIDEO,
+  };
+
+  StreamingProtocol protocol;
+  TrackType track_type;
+  // TOOD: do we need non-integer durations?
+  double segment_duration_in_seconds;
+};
+
 class LivePackager {
 public:
-  LivePackager();
+  LivePackager(const LiveConfig &config);
   ~LivePackager();
+
+  void Init();
 
   Status Package(const Segment &init, const Segment &segment);
   const Segment &GetInitSegment() const;
@@ -51,9 +70,10 @@ public:
   LivePackager& operator=(const LivePackager&) = delete;
 
 private:
-  uint64_t segment_count_ {0};
+  uint64_t segment_count_ = 0u;
   shaka::Segment init_segment_;
   shaka::Segment segment_;
+  LiveConfig config_;
 };
 
 }  // namespace shaka
