@@ -18,8 +18,8 @@ namespace {
 
 using StreamDescriptors = std::vector<shaka::StreamDescriptor>;
 
-const std::string DEFAULT_INPUT_FNAME = "memory://input_file";
-const std::string DEFAULT_INIT_SEGMENT_FNAME = "init.mp4";
+const std::string INPUT_FNAME = "memory://input_file";
+const std::string INIT_SEGMENT_FNAME = "init.mp4";
 
 std::string getSegmentTemplate(const LiveConfig &config) {
   return LiveConfig::OutputFormat::TS == config.format ? "$Number$.ts" : "$Number$.m4s";
@@ -32,26 +32,24 @@ std::string getStreamSelector(const LiveConfig &config) {
 StreamDescriptors setupStreamDescriptors(const LiveConfig &config,
                                          const BufferCallbackParams &cb_params,
                                          const BufferCallbackParams &init_cb_params) {
-  shaka::StreamDescriptor stream_descriptor;
+  shaka::StreamDescriptor desc;
 
-  stream_descriptor.input = 
-    File::MakeCallbackFileName(cb_params, DEFAULT_INPUT_FNAME);
+  desc.input = File::MakeCallbackFileName(cb_params, INPUT_FNAME);
 
-  stream_descriptor.stream_selector = getStreamSelector(config);
+  desc.stream_selector = getStreamSelector(config);
 
   if(LiveConfig::OutputFormat::FMP4 == config.format) {
     // init segment
-    stream_descriptor.output = 
-      File::MakeCallbackFileName(init_cb_params, DEFAULT_INIT_SEGMENT_FNAME);
+    desc.output = File::MakeCallbackFileName(init_cb_params, INIT_SEGMENT_FNAME);
   }
 
-  stream_descriptor.segment_template = 
+  desc.segment_template =
     File::MakeCallbackFileName(cb_params, getSegmentTemplate(config));
 
-  return StreamDescriptors { stream_descriptor };
+  return StreamDescriptors { desc };
 } 
 
-}
+} // namespace
 
 Segment::Segment(const uint8_t *data, size_t size) 
   : data_(data, data + size) {
@@ -79,7 +77,8 @@ LivePackager::LivePackager(const LiveConfig &config)
   : config_(config) {
 }
 
-LivePackager::~LivePackager() {}
+LivePackager::~LivePackager() {
+}
 
 std::unique_ptr<shaka::File, shaka::FileCloser> setupInputSource(const char *fname, 
                                                                  const Segment &init, 
@@ -92,8 +91,9 @@ std::unique_ptr<shaka::File, shaka::FileCloser> setupInputSource(const char *fna
   return file;
 }
 
-Status LivePackager::Package(const Segment &init, const Segment &segment) {
-  auto file = setupInputSource(DEFAULT_INPUT_FNAME.c_str(), init, segment);
+Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
+  auto file = setupInputSource(INPUT_FNAME.c_str(), in.init, in.data);
+
   std::vector<uint8_t> initBuffer;
   std::vector<uint8_t> segmentBuffer;
 
@@ -101,6 +101,7 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   callback_params.read_func = [&file](const std::string &name, 
                                       void *buffer,
                                       uint64_t size) {
+    // TODO: replace with actual logging
     // std::cout << "read_func called: size: " << size << std::endl;
     const auto n = file->Read(buffer, size);
     // std::cout << "read size: " << n << std::endl;
@@ -110,6 +111,7 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   callback_params.write_func = [&segmentBuffer](const std::string &name,
                                                 const void *data,
                                                 uint64_t size) {
+    // TODO: replace with actual logging
     // std::cout << "write_func called: size: " << size << std::endl;
     auto *ptr = reinterpret_cast<const uint8_t*>(data);
     std::copy(ptr, ptr + size, std::back_inserter(segmentBuffer));
@@ -130,14 +132,14 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
     return size;
   };
 
-  shaka::PackagingParams packaging_params;
-  packaging_params.chunking_params.segment_duration_in_seconds = config_.segment_duration_in_seconds;
+  shaka::PackagingParams params;
+  params.chunking_params.segment_duration_in_seconds = config_.segment_duration_sec;
 
-  StreamDescriptors stream_descriptors =
+  StreamDescriptors descriptors =
     setupStreamDescriptors(config_, callback_params, init_callback_params);
 
   shaka::Packager packager;
-  shaka::Status status = packager.Initialize(packaging_params, stream_descriptors);
+  shaka::Status status = packager.Initialize(params, descriptors);
 
   if(status != Status::OK) {
     return status;
@@ -146,39 +148,13 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   status = packager.Run();
   ++segment_count_;
 
-//********************************************************************************
-
-  std::cout << "init segment buffer size: " << initBuffer.size() << std::endl;
-  std::cout << "segment buffer size: " << segmentBuffer.size() << std::endl;
   if(status == Status::OK) {
-    {
-      std::stringstream ss;
-      auto isTS = config_.format == LiveConfig::OutputFormat::TS;
-      ss << std::setw(4) << std::setfill('0') << segment_count_ << (isTS ? ".ts" : ".m4s");
-      std::ofstream fout(ss.str(), std::ios::binary);
-      fout.write(reinterpret_cast<const char*>(segmentBuffer.data()), segmentBuffer.size());
-      segment_ = shaka::Segment(segmentBuffer.data(), segmentBuffer.size());
-    }
-
-    {
-      if(segment_count_ == 1 && !initBuffer.empty()) {
-        std::ofstream fout(DEFAULT_INIT_SEGMENT_FNAME, std::ios::binary);
-        fout.write(reinterpret_cast<const char*>(initBuffer.data()), initBuffer.size());
-        init_segment_ = shaka::Segment(initBuffer.data(), initBuffer.size());
-      }
-    }
-  } else {
-    std::cout << status.error_message() << std::endl;
+    // TODO: avoid second copy 
+    out.data = shaka::Segment(segmentBuffer.data(), segmentBuffer.size());
+    out.init = shaka::Segment(initBuffer.data(), initBuffer.size());
   }
 
   return status;
-}
-
-const Segment& LivePackager::GetInitSegment() const {
-  return init_segment_;
-}
-const Segment& LivePackager::GetSegment() const {
-  return segment_;
 }
 
 }  // namespace shaka

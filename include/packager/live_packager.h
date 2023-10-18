@@ -37,6 +37,13 @@ private:
   std::vector<uint8_t> data_;
 };
 
+struct FullSegment {
+  // ftyp + moov
+  Segment init;
+  // moof + mdat
+  Segment data;
+};
+
 struct LiveConfig {
   enum class OutputFormat {
     FMP4,
@@ -51,7 +58,7 @@ struct LiveConfig {
   OutputFormat format;
   TrackType track_type;
   // TOOD: do we need non-integer durations?
-  double segment_duration_in_seconds;
+  double segment_duration_sec;
 };
 
 class LivePackager {
@@ -59,17 +66,13 @@ public:
   LivePackager(const LiveConfig &config);
   ~LivePackager();
 
-  Status Package(const Segment &init, const Segment &segment);
-  const Segment &GetInitSegment() const;
-  const Segment &GetSegment() const;
+  Status Package(const FullSegment &input, FullSegment &output);
 
   LivePackager(const LivePackager&) = delete;
   LivePackager& operator=(const LivePackager&) = delete;
 
 private:
   uint64_t segment_count_ = 0u;
-  shaka::Segment init_segment_;
-  shaka::Segment segment_;
   LiveConfig config_;
 };
 

@@ -638,19 +638,43 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 }
 #else
 
+void write(const std::string &fname, const shaka::Segment &segment) {
+  if(segment.size() == 0) {
+    return;
+  }
+  std::ofstream fout(fname, std::ios::binary);
+  fout.write(reinterpret_cast<const char*>(segment.data()), segment.size());
+}
+
 int testLivePackager(int argc, char **argv) {
   shaka::Segment initSegment(argv[1]);
+
   shaka::LiveConfig config {
-    .format = shaka::LiveConfig::OutputFormat::FMP4,
-    .segment_duration_in_seconds = 5,
+    .format = shaka::LiveConfig::OutputFormat::TS,
+    .segment_duration_sec = 5,
     .track_type = shaka::LiveConfig::TrackType::VIDEO
   };
+
+  shaka::FullSegment in; 
+  in.init = initSegment;
+
   shaka::LivePackager packager(config);
 
   for(int i(2); i < argc; ++i) {
+    shaka::FullSegment out;
     std::cout << std::string(argv[i]) << std::endl;
-    shaka::Segment segment(argv[i]);
-    packager.Package(initSegment, segment);
+    shaka::Segment data(argv[i]);
+    in.data = data; 
+    packager.Package(in, out);
+
+    if(i == 2) {
+      write("init.mp4", out.init);
+    }
+
+    std::stringstream ss;
+    ss << std::setw(4) << std::setfill('0') << (i - 1)
+       << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
+    write(ss.str(), out.data);
   }
 
   return 0;
