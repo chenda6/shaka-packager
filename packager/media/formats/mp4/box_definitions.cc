@@ -9,10 +9,11 @@
 #include <vector>
 
 #include <absl/flags/flag.h>
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/bit_reader.h>
-#include <packager/media/base/macros.h>
 #include <packager/media/base/rcheck.h>
 #include <packager/media/formats/mp4/box_buffer.h>
 

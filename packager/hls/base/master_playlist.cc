@@ -10,14 +10,16 @@
 #include <cstdint>
 #include <filesystem>
 
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_format.h>
 #include <absl/strings/str_join.h>
-#include <glog/logging.h>
 
-#include <packager/file/file.h>
+#include <packager/file.h>
 #include <packager/hls/base/media_playlist.h>
 #include <packager/hls/base/tag.h>
+#include <packager/macros/logging.h>
 #include <packager/version/version.h>
 
 namespace shaka {

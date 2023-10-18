@@ -8,8 +8,9 @@
 
 #include <cstdint>
 
-#include <glog/logging.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/media_sample.h>
 #include <packager/media/base/offset_byte_queue.h>
 #include <packager/media/base/timestamp.h>

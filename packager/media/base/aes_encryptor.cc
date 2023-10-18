@@ -6,7 +6,10 @@
 
 #include <packager/media/base/aes_encryptor.h>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
+
+#include <packager/macros/crypto.h>
 
 namespace {
 

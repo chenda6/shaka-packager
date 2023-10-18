@@ -4,8 +4,9 @@
 
 #include <packager/media/formats/webm/webm_video_client.h>
 
-#include <glog/logging.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/video_util.h>
 #include <packager/media/codecs/av1_codec_configuration_record.h>
 #include <packager/media/codecs/vp_codec_configuration_record.h>

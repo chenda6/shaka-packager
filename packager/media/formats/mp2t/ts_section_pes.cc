@@ -4,8 +4,10 @@
 
 #include <packager/media/formats/mp2t/ts_section_pes.h>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/bit_reader.h>
 #include <packager/media/base/timestamp.h>
 #include <packager/media/formats/mp2t/es_parser.h>

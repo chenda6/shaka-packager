@@ -6,9 +6,9 @@
 
 #include <packager/media/codecs/ec3_audio_util.h>
 
+#include <absl/log/check.h>
 #include <absl/strings/escaping.h>
 
-#include <packager/macros.h>
 #include <packager/media/base/bit_reader.h>
 #include <packager/media/base/rcheck.h>
 #include <packager/utils/bytes_to_string_view.h>

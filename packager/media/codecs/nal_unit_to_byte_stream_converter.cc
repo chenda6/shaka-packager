@@ -8,12 +8,13 @@
 
 #include <list>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/compiler.h>
 #include <packager/media/base/bit_reader.h>
 #include <packager/media/base/buffer_reader.h>
 #include <packager/media/base/buffer_writer.h>
-#include <packager/media/base/macros.h>
 #include <packager/media/codecs/nalu_reader.h>
 
 namespace shaka {

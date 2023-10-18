@@ -6,9 +6,11 @@
 
 #include <packager/mpd/base/mpd_notifier_util.h>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
-#include <packager/file/file.h>
+#include <packager/file.h>
+#include <packager/macros/logging.h>
 #include <packager/mpd/base/mpd_utils.h>
 
 namespace shaka {

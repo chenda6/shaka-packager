@@ -6,10 +6,10 @@
 
 #include <packager/media/base/video_stream_info.h>
 
+#include <absl/log/log.h>
 #include <absl/strings/str_format.h>
-#include <glog/logging.h>
 
-#include <packager/macros.h>
+#include <packager/macros/logging.h>
 #include <packager/media/base/limits.h>
 
 namespace shaka {

@@ -5,9 +5,10 @@
 
 #include <packager/media/codecs/h264_parser.h>
 
-#include <glog/logging.h>
+#include <absl/log/log.h>
 #include <gtest/gtest.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/test/test_data_util.h>
 
 namespace shaka {

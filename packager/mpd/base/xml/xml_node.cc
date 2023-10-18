@@ -6,19 +6,21 @@
 
 #include <packager/mpd/base/xml/xml_node.h>
 
+#include <cinttypes>
 #include <cmath>
 #include <limits>
 #include <set>
 
 #include <absl/base/internal/endian.h>
 #include <absl/flags/flag.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 #include <absl/strings/escaping.h>
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_format.h>
-#include <glog/logging.h>
 #include <libxml/tree.h>
 
-#include <packager/macros.h>
+#include <packager/macros/compiler.h>
 #include <packager/media/base/rcheck.h>
 #include <packager/mpd/base/media_info.pb.h>
 #include <packager/mpd/base/mpd_utils.h>

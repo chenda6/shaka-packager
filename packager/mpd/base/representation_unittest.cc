@@ -10,11 +10,12 @@
 
 #include <absl/flags/declare.h>
 #include <absl/flags/flag.h>
+#include <absl/log/check.h>
 #include <absl/strings/str_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <packager/file/file.h>
+#include <packager/file.h>
 #include <packager/file/file_closer.h>
 #include <packager/flag_saver.h>
 #include <packager/mpd/base/mpd_options.h>

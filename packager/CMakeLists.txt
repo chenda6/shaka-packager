@@ -6,6 +6,9 @@
 
 # Packager CMake build file.
 
+# Include a module to define standard install directories.
+include(GNUInstallDirs)
+
 # Build static libs by default, or shared if LIBPACKAGER_SHARED is defined.
 if(LIBPACKAGER_SHARED)
   add_definitions(-DSHARED_LIBRARY_BUILD)
@@ -48,6 +51,12 @@ else()
   add_compile_options(-Wno-unknown-warning-option)
 endif()
 
+# Global include paths.
+# Project root, to reference internal headers as packager/foo/bar/...
+include_directories(..)
+# Public include folder, to reference public headers as packager/foo.h
+include_directories(../include)
+
 # Include our module for gtest-based testing.
 include("gtest.cmake")
 
@@ -76,9 +85,9 @@ set(libpackager_sources
   app/single_thread_job_manager.cc
   app/single_thread_job_manager.h
   packager.cc
-  packager.h
   live_packager.cc
-  live_packager.h
+  ../include/packager/packager.h
+  ../include/packager/live_packager.h
   )
 
 if(LIBPACKAGER_SHARED)
@@ -110,6 +119,10 @@ target_link_libraries(libpackager
   string_utils
   version
 )
+# Avoid liblibpackager on Windows:
+if(NOT MSVC)
+  set_property(TARGET libpackager PROPERTY OUTPUT_NAME packager)
+endif()
 
 add_executable(packager
   app/ad_cue_generator_flags.cc
@@ -143,13 +156,14 @@ add_executable(packager
   app/widevine_encryption_flags.h
 )
 target_link_libraries(packager
-  libpackager
-  hex_bytes_flags
   absl::flags
   absl::flags_parse
-  license_notice
-  glog
+  absl::log
+  absl::log_flags
   absl::strings
+  hex_bytes_flags
+  libpackager
+  license_notice
   string_utils
 )
 
@@ -160,13 +174,14 @@ add_executable(mpd_generator
   app/vlog_flags.h
 )
 target_link_libraries(mpd_generator
-  mpd_builder
-  mpd_util
   absl::flags
   absl::flags_parse
+  absl::log
+  absl::log_flags
   absl::strings
-  glog
   license_notice
+  mpd_builder
+  mpd_util
   )
 
 add_executable(packager_test
@@ -177,3 +192,19 @@ target_link_libraries(packager_test
   gmock
   gtest
   gtest_main)
+
+configure_file(packager.pc.in packager.pc @ONLY)
+
+
+install(DIRECTORY ../include/packager
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(TARGETS mpd_generator packager libpackager)
+
+install(PROGRAMS ${CMAKE_BINARY_DIR}/pssh-box.py
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/pssh-box-protos
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(FILES ${CMAKE_BINARY_DIR}/packager/packager.pc
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

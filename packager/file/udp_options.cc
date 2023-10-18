@@ -9,12 +9,12 @@
 #include <iterator>
 
 #include <absl/flags/flag.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_split.h>
-#include <glog/logging.h>
 
 #include <packager/kv_pairs/kv_pairs.h>
-#include <packager/macros.h>
 
 ABSL_FLAG(std::string,
           udp_interface_address,

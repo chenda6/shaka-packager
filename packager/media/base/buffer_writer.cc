@@ -7,9 +7,10 @@
 #include <packager/media/base/buffer_writer.h>
 
 #include <absl/base/internal/endian.h>
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
-#include <packager/file/file.h>
+#include <packager/file.h>
 
 namespace shaka {
 namespace media {

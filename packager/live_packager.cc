@@ -8,10 +8,9 @@
 #include <sstream>
 
 #include <packager/packager.h>
-#include <packager/file/file.h>
+#include <packager/file.h>
 #include <packager/file/file_closer.h>
 #include <packager/live_packager.h>
-#include "live_packager.h"
 
 namespace shaka {
 

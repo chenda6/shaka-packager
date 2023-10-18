@@ -6,8 +6,10 @@
 
 #include <packager/media/formats/webm/segmenter.h>
 
+#include <absl/log/check.h>
 #include <mkvmuxer/mkvmuxerutil.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/audio_stream_info.h>
 #include <packager/media/base/media_handler.h>
 #include <packager/media/base/muxer_options.h>

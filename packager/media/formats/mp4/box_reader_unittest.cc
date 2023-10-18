@@ -8,9 +8,11 @@
 #include <cstring>
 #include <memory>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 #include <gtest/gtest.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/base/rcheck.h>
 
 namespace shaka {

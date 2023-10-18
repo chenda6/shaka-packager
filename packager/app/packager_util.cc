@@ -6,9 +6,9 @@
 
 #include <packager/app/packager_util.h>
 
-#include <glog/logging.h>
+#include <absl/log/log.h>
 
-#include <packager/file/file.h>
+#include <packager/file.h>
 #include <packager/media/base/media_handler.h>
 #include <packager/media/base/muxer_options.h>
 #include <packager/media/base/playready_key_source.h>

@@ -14,8 +14,10 @@
 
 #include <limits>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
 #include <packager/media/formats/webm/webm_constants.h>
 
 namespace shaka {

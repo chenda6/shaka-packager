@@ -28,9 +28,13 @@
 
 #include <limits>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
 #include <packager/file/udp_options.h>
+#include <packager/macros/classes.h>
+#include <packager/macros/compiler.h>
+#include <packager/macros/logging.h>
 
 namespace shaka {
 

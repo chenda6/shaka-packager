@@ -9,9 +9,11 @@
 #include <algorithm>
 #include <cmath>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
-#include <packager/media/base/macros.h>
+#include <packager/macros/compiler.h>
+#include <packager/macros/logging.h>
 #include <packager/media/codecs/nalu_reader.h>
 
 #define TRUE_OR_RETURN(a)                            \

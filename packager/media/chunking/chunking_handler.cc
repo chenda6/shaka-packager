@@ -8,10 +8,12 @@
 
 #include <algorithm>
 
-#include <glog/logging.h>
+#include <absl/log/check.h>
+#include <absl/log/log.h>
 
+#include <packager/macros/logging.h>
+#include <packager/macros/status.h>
 #include <packager/media/base/media_sample.h>
-#include <packager/status/status_macros.h>
 
 namespace shaka {
 namespace media {
