@@ -22,7 +22,7 @@ const std::string DEFAULT_INPUT_FNAME = "memory://input_file";
 const std::string DEFAULT_INIT_SEGMENT_FNAME = "init.mp4";
 
 std::string getSegmentTemplate(const LiveConfig &config) {
-  return LiveConfig::StreamingProtocol::HLS == config.protocol ? "$Number$.ts" : "$Number$.m4s";
+  return LiveConfig::OutputFormat::TS == config.format ? "$Number$.ts" : "$Number$.m4s";
 }
 
 std::string getStreamSelector(const LiveConfig &config) {
@@ -39,7 +39,7 @@ StreamDescriptors setupStreamDescriptors(const LiveConfig &config,
 
   stream_descriptor.stream_selector = getStreamSelector(config);
 
-  if(LiveConfig::StreamingProtocol::DASH == config.protocol) {
+  if(LiveConfig::OutputFormat::FMP4 == config.format) {
     // init segment
     stream_descriptor.output = 
       File::MakeCallbackFileName(init_cb_params, DEFAULT_INIT_SEGMENT_FNAME);
@@ -153,8 +153,8 @@ Status LivePackager::Package(const Segment &init, const Segment &segment) {
   if(status == Status::OK) {
     {
       std::stringstream ss;
-      auto isHLS = config_.protocol == LiveConfig::StreamingProtocol::HLS;
-      ss << std::setw(4) << std::setfill('0') << segment_count_ << (isHLS ? ".ts" : ".m4s");
+      auto isTS = config_.format == LiveConfig::OutputFormat::TS;
+      ss << std::setw(4) << std::setfill('0') << segment_count_ << (isTS ? ".ts" : ".m4s");
       std::ofstream fout(ss.str(), std::ios::binary);
       fout.write(reinterpret_cast<const char*>(segmentBuffer.data()), segmentBuffer.size());
       segment_ = shaka::Segment(segmentBuffer.data(), segmentBuffer.size());

@@ -38,9 +38,9 @@ private:
 };
 
 struct LiveConfig {
-  enum class StreamingProtocol {
-    DASH,
-    HLS,
+  enum class OutputFormat {
+    FMP4,
+    TS,
   };
 
   enum class TrackType {
@@ -48,7 +48,7 @@ struct LiveConfig {
     VIDEO,
   };
 
-  StreamingProtocol protocol;
+  OutputFormat format;
   TrackType track_type;
   // TOOD: do we need non-integer durations?
   double segment_duration_in_seconds;

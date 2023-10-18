@@ -641,7 +641,7 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 int testLivePackager(int argc, char **argv) {
   shaka::Segment initSegment(argv[1]);
   shaka::LiveConfig config {
-    .protocol = shaka::LiveConfig::StreamingProtocol::DASH,
+    .format = shaka::LiveConfig::OutputFormat::FMP4,
     .segment_duration_in_seconds = 5,
     .track_type = shaka::LiveConfig::TrackType::VIDEO
   };
