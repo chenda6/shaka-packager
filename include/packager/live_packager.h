@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <string>
-#include <absl/synchronization/notification.h>
 #include <packager/packager.h>
 
 namespace shaka {
