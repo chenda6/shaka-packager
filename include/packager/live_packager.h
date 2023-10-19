@@ -28,10 +28,10 @@ public:
   size_t GetSegmentSize() const;
 
 private:
-  /// buffer is expected to contain both the init and data segments, i.e.,
+  // 'buffer' is expected to contain both the init and data segments, i.e.,
   // (ftyp + moov) + (moof + mdat)
   std::vector<uint8_t> buffer_;
-  /// @brief  Indicates the how much the init segment occupies data_
+  // Indicates the how much the init segment occupies buffer_
   size_t init_segment_size_ = 0;
 };
 
