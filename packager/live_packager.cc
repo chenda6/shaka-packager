@@ -79,18 +79,6 @@ private:
 
 } // namespace
 
-Segment::Segment(const uint8_t *data, size_t size) 
-  : data_(data), size_(size) {
-}
-
-const uint8_t *Segment::data() const {
-  return data_;
-}
-
-size_t Segment::size() const {
-  return size_;
-}
-
 LivePackager::LivePackager(const LiveConfig &config) 
   : config_(config) {
 }
@@ -129,18 +117,13 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
   callback_params.read_func = [&reader](const std::string &name, 
                                         void *buffer,
                                         uint64_t size) {
-    // TODO: replace with actual logging
-    // std::cout << "read_func called: size: " << size << std::endl;
     const auto n = reader.Read(buffer, size);
-    // std::cout << "read size: " << n << std::endl;
     return n;
   };
 
   callback_params.write_func = [&out](const std::string &name,
                                       const void *data,
                                       uint64_t size) {
-    // TODO: replace with actual logging
-    // std::cout << "write_func called: size: " << size << std::endl;
     out.AppendData(reinterpret_cast<const uint8_t *>(data), size);
     return size;
   };
@@ -149,7 +132,6 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
   init_callback_params.write_func = [&out](const std::string &name,
                                            const void *data,
                                            uint64_t size) {
-    // std::cout << "init_write_func called: size: " << size << std::endl;
     // TODO: this gets called more than once, why?
     // TODO: this is a workaround to write this only once 
     if(out.GetInitSegmentSize() == 0) {
@@ -171,7 +153,6 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
     return status;
   }      
 
-  ++segment_count_;
   return packager.Run();
 }
 

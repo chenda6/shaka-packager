@@ -9,34 +9,10 @@
 
 #include <memory>
 #include <string>
-
 #include <absl/synchronization/notification.h>
-
 #include <packager/packager.h>
 
 namespace shaka {
-
-/// TODO: LivePackager handles packaging fragments
-
-class Segment {
-public:
-  Segment() = default;
-  ~Segment() = default;
-
-  Segment(const uint8_t *data, size_t size); 
-  Segment(const std::vector<uint8_t> &data);
-
-  const uint8_t *data() const;
-  uint8_t *data();
-  size_t size() const;
-
-  void Insert(const uint8_t* data, size_t size);
-  
-private:
-  const uint8_t *data_ = nullptr;
-  size_t size_ = 0;
-  std::vector<uint8_t> buffer_;
-};
 
 struct FullSegment {
 public:
@@ -87,7 +63,6 @@ public:
   LivePackager& operator=(const LivePackager&) = delete;
 
 private:
-  uint64_t segment_count_ = 0u;
   LiveConfig config_;
 };
 
