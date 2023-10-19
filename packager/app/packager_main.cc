@@ -41,9 +41,6 @@
 #include <packager/tools/license_notice.h>
 #include <packager/utils/string_trim_split.h>
 
-#include <fstream>
-#include <packager/live_packager.h>
-
 ABSL_FLAG(bool, dump_stream_info, false, "Dump demuxed stream info.");
 ABSL_FLAG(bool, licenses, false, "Dump licenses.");
 ABSL_FLAG(bool, quiet, false, "When enabled, LOG(INFO) output is suppressed.");
@@ -637,73 +634,7 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
   return shaka::PackagerMain(argc, utf8_argv.get());
 }
 #else
-
-void write(const std::string &fname, const char *data, size_t size) {
-  if(size == 0) {
-    return;
-  }
-  std::ofstream fout(fname, std::ios::binary);
-  fout.write(data, size);
-}
-
-std::vector<uint8_t> readSegment(const char *fname) {
-  std::cout << "reading: " << fname << std::endl;
-  std::vector<uint8_t> data;
-
-  try {
-    std::ifstream fin(fname, std::ios::binary);
-    fin.seekg(0, std::ios::end);
-    data.resize(fin.tellg());
-    fin.seekg(0, std::ios::beg);
-    fin.read(reinterpret_cast<char *>(data.data()), data.size());
-  } catch(std::exception &e) {
-    std::cerr << e.what() << std::endl;
-  }
-  return data;
-}
-
-int testLivePackager(int argc, char **argv) {
-  std::vector<uint8_t> init_buff = readSegment(argv[1]);
-
-  shaka::LiveConfig config {
-    .format = shaka::LiveConfig::OutputFormat::TS,
-    .segment_duration_sec = 5,
-    .track_type = shaka::LiveConfig::TrackType::VIDEO
-  };
-
-  shaka::LivePackager packager(config);
-  for(int i(2); i < argc; ++i) {
-    const std::vector<uint8_t> segment_buff = readSegment(argv[i]);
-
-    shaka::FullSegment in; 
-    in.SetInitSegment(init_buff.data(), init_buff.size());
-    in.AppendData(segment_buff.data(), segment_buff.size());
-
-    shaka::FullSegment out;
-    const auto status = packager.Package(in, out);
-    if(status != shaka::Status::OK) {
-      continue;
-    }
-
-    const char *data = reinterpret_cast<const char *>(out.GetBuffer().data());
-    if(i == 2) {
-      write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
-    }
-
-    std::stringstream ss;
-    ss << std::setw(4) << std::setfill('0') << (i - 1)
-       << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
-    write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
-  }
-
-  return 0;
-}
-
 int main(int argc, char** argv) {
-  if(true) {
-    return testLivePackager(argc, argv);
-  }
-
   return shaka::PackagerMain(argc, argv);
 }
 #endif  // defined(OS_WIN)
