@@ -638,16 +638,32 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 }
 #else
 
-void write(const std::string &fname, const shaka::Segment &segment) {
-  if(segment.size() == 0) {
+void write(const std::string &fname, const char *data, size_t size) {
+  if(size == 0) {
     return;
   }
   std::ofstream fout(fname, std::ios::binary);
-  fout.write(reinterpret_cast<const char*>(segment.data()), segment.size());
+  fout.write(data, size);
+}
+
+std::vector<uint8_t> readSegment(const char *fname) {
+  std::cout << "reading: " << fname << std::endl;
+  std::vector<uint8_t> data;
+
+  try {
+    std::ifstream fin(fname, std::ios::binary);
+    fin.seekg(0, std::ios::end);
+    data.resize(fin.tellg());
+    fin.seekg(0, std::ios::beg);
+    fin.read(reinterpret_cast<char *>(data.data()), data.size());
+  } catch(std::exception &e) {
+    std::cerr << e.what() << std::endl;
+  }
+  return data;
 }
 
 int testLivePackager(int argc, char **argv) {
-  shaka::Segment initSegment(argv[1]);
+  std::vector<uint8_t> init_buff = readSegment(argv[1]);
 
   shaka::LiveConfig config {
     .format = shaka::LiveConfig::OutputFormat::TS,
@@ -655,26 +671,29 @@ int testLivePackager(int argc, char **argv) {
     .track_type = shaka::LiveConfig::TrackType::VIDEO
   };
 
-  shaka::FullSegment in; 
-  in.init = initSegment;
-
   shaka::LivePackager packager(config);
-
   for(int i(2); i < argc; ++i) {
-    shaka::FullSegment out;
-    std::cout << std::string(argv[i]) << std::endl;
-    shaka::Segment data(argv[i]);
-    in.data = data; 
-    packager.Package(in, out);
+    const std::vector<uint8_t> segment_buff = readSegment(argv[i]);
 
+    shaka::FullSegment in; 
+    in.SetInitSegment(init_buff.data(), init_buff.size());
+    in.AppendData(segment_buff.data(), segment_buff.size());
+
+    shaka::FullSegment out;
+    const auto status = packager.Package(in, out);
+    if(status != shaka::Status::OK) {
+      continue;
+    }
+
+    const char *data = reinterpret_cast<const char *>(out.GetBuffer().data());
     if(i == 2) {
-      write("init.mp4", out.init);
+      write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
     }
 
     std::stringstream ss;
     ss << std::setw(4) << std::setfill('0') << (i - 1)
        << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
-    write(ss.str(), out.data);
+    write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
   }
 
   return 0;

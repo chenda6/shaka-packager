@@ -6,11 +6,15 @@
 
 #include <fstream>
 #include <sstream>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
 
 #include <packager/packager.h>
 #include <packager/file.h>
 #include <packager/file/file_closer.h>
 #include <packager/live_packager.h>
+#include <packager/chunking_params.h>
 
 namespace shaka {
 
@@ -49,85 +53,107 @@ StreamDescriptors setupStreamDescriptors(const LiveConfig &config,
   return StreamDescriptors { desc };
 } 
 
+class SegmentBufferReader{
+public:
+  SegmentBufferReader(const FullSegment &segment) 
+    : segment_(segment) {
+  }
+
+  uint64_t Read(void *buffer, uint64_t size) {
+    const auto &buf= segment_.GetBuffer();
+    if (position_ >= buf.size()) {
+      return 0;
+    }
+
+    const uint64_t bytes_to_read = std::min(size, buf.size() - position_);
+    memcpy(buffer, buf.data() + position_, bytes_to_read);
+
+    position_ += bytes_to_read;
+    return bytes_to_read;
+  }
+
+private:
+  const FullSegment &segment_;
+  uint64_t position_ = 0;
+};
+
 } // namespace
 
 Segment::Segment(const uint8_t *data, size_t size) 
-  : data_(data, data + size) {
-}
-
-Segment::Segment(const char *fname) {
-  std::ifstream fin(fname, std::ios::binary);
-
-  fin.seekg(0, std::ios::end);
-  data_.resize(fin.tellg());
-  fin.seekg(0, std::ios::beg);
-
-  fin.read(reinterpret_cast<char*>(data_.data()), data_.size());
+  : data_(data), size_(size) {
 }
 
 const uint8_t *Segment::data() const {
-  return data_.data();
+  return data_;
 }
 
 size_t Segment::size() const {
-  return data_.size();
+  return size_;
 }
 
 LivePackager::LivePackager(const LiveConfig &config) 
   : config_(config) {
 }
 
+void FullSegment::SetInitSegment(const uint8_t *data, size_t size) {
+  buffer_.clear();
+  std::copy(data, data + size, std::back_inserter(buffer_));
+  init_segment_size_ = size;
+}
+
+void FullSegment::AppendData(const uint8_t *data, size_t size) {
+  std::copy(data, data + size, std::back_inserter(buffer_));
+}
+
+const std::vector<uint8_t> & FullSegment::GetBuffer() const {
+  return buffer_;
+}
+
+size_t FullSegment::GetInitSegmentSize() const {
+  return init_segment_size_;
+}
+
+size_t FullSegment::GetSegmentSize() const {
+  return buffer_.size() - init_segment_size_;
+}
+
 LivePackager::~LivePackager() {
 }
 
-std::unique_ptr<shaka::File, shaka::FileCloser> setupInputSource(const char *fname, 
-                                                                 const Segment &init, 
-                                                                 const Segment &segment) {
-  std::unique_ptr<File, FileCloser> file(File::Open(fname, "w"));
-  file->Write(init.data(), init.size());
-  file->Write(segment.data(), segment.size());
-  file->Seek(0);
-
-  return file;
-}
-
 Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
-  auto file = setupInputSource(INPUT_FNAME.c_str(), in.init, in.data);
-
   std::vector<uint8_t> initBuffer;
   std::vector<uint8_t> segmentBuffer;
 
+  SegmentBufferReader reader(in);
   shaka::BufferCallbackParams callback_params;
-  callback_params.read_func = [&file](const std::string &name, 
-                                      void *buffer,
-                                      uint64_t size) {
+  callback_params.read_func = [&reader](const std::string &name, 
+                                        void *buffer,
+                                        uint64_t size) {
     // TODO: replace with actual logging
     // std::cout << "read_func called: size: " << size << std::endl;
-    const auto n = file->Read(buffer, size);
+    const auto n = reader.Read(buffer, size);
     // std::cout << "read size: " << n << std::endl;
     return n;
   };
 
-  callback_params.write_func = [&segmentBuffer](const std::string &name,
-                                                const void *data,
-                                                uint64_t size) {
+  callback_params.write_func = [&out](const std::string &name,
+                                      const void *data,
+                                      uint64_t size) {
     // TODO: replace with actual logging
     // std::cout << "write_func called: size: " << size << std::endl;
-    auto *ptr = reinterpret_cast<const uint8_t*>(data);
-    std::copy(ptr, ptr + size, std::back_inserter(segmentBuffer));
+    out.AppendData(reinterpret_cast<const uint8_t *>(data), size);
     return size;
   };
 
   shaka::BufferCallbackParams init_callback_params;
-  init_callback_params.write_func = [&initBuffer](const std::string &name,
-                                                  const void *data,
-                                                  uint64_t size) {
+  init_callback_params.write_func = [&out](const std::string &name,
+                                           const void *data,
+                                           uint64_t size) {
     // std::cout << "init_write_func called: size: " << size << std::endl;
     // TODO: this gets called more than once, why?
     // TODO: this is a workaround to write this only once 
-    if(initBuffer.size() == 0) {
-      auto *ptr = reinterpret_cast<const uint8_t*>(data);
-      std::copy(ptr, ptr + size, std::back_inserter(initBuffer));
+    if(out.GetInitSegmentSize() == 0) {
+      out.SetInitSegment(reinterpret_cast<const uint8_t *>(data), size);
     }
     return size;
   };
@@ -145,16 +171,8 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
     return status;
   }      
 
-  status = packager.Run();
   ++segment_count_;
-
-  if(status == Status::OK) {
-    // TODO: avoid second copy 
-    out.data = shaka::Segment(segmentBuffer.data(), segmentBuffer.size());
-    out.init = shaka::Segment(initBuffer.data(), initBuffer.size());
-  }
-
-  return status;
+  return packager.Run();
 }
 
 }  // namespace shaka

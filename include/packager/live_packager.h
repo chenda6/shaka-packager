@@ -12,7 +12,6 @@
 
 #include <absl/synchronization/notification.h>
 
-#include <packager/file/io_cache.h>
 #include <packager/packager.h>
 
 namespace shaka {
@@ -25,23 +24,39 @@ public:
   ~Segment() = default;
 
   Segment(const uint8_t *data, size_t size); 
-  explicit Segment(const char *fname); 
+  Segment(const std::vector<uint8_t> &data);
 
   const uint8_t *data() const;
+  uint8_t *data();
   size_t size() const;
-  
-  uint64_t SequenceNumber() const;
-  void SetSequenceNumber(uint64_t n);
 
+  void Insert(const uint8_t* data, size_t size);
+  
 private:
-  std::vector<uint8_t> data_;
+  const uint8_t *data_ = nullptr;
+  size_t size_ = 0;
+  std::vector<uint8_t> buffer_;
 };
 
 struct FullSegment {
-  // ftyp + moov
-  Segment init;
-  // moof + mdat
-  Segment data;
+public:
+  FullSegment() = default;
+  ~FullSegment() = default;
+
+  void SetInitSegment(const uint8_t *data, size_t size);
+  void AppendData(const uint8_t *data, size_t size);
+
+  const std::vector<uint8_t> & GetBuffer() const;
+
+  size_t GetInitSegmentSize() const;
+  size_t GetSegmentSize() const;
+
+private:
+  /// buffer is expected to contain both the init and data segments, i.e.,
+  // (ftyp + moov) + (moof + mdat)
+  std::vector<uint8_t> buffer_;
+  /// @brief  Indicates the how much the init segment occupies data_
+  size_t init_segment_size_ = 0;
 };
 
 struct LiveConfig {
