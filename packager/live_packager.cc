@@ -114,8 +114,7 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
   callback_params.read_func = [&reader](const std::string &name, 
                                         void *buffer,
                                         uint64_t size) {
-    const auto n = reader.Read(buffer, size);
-    return n;
+    return reader.Read(buffer, size);
   };
 
   callback_params.write_func = [&out](const std::string &name,
