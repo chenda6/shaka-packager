@@ -74,10 +74,10 @@ int testLivePackager(int argc, char **argv) {
       continue;
     }
 
-    const char *data = reinterpret_cast<const char *>(out.GetBuffer().data());
+    const char *data = reinterpret_cast<const char *>(out.InitSegmentData());
     if(write_outputs) {
       if(i == segment_files_start_index) {
-        write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
+        write("init.mp4", reinterpret_cast<const char *>(data), out.InitSegmentSize());
       }
     }
 
@@ -85,7 +85,7 @@ int testLivePackager(int argc, char **argv) {
     if(write_outputs) {
       std::stringstream ss;
       ss << std::setw(4) << std::setfill('0') << (i - segment_files_offset) << ext;
-      write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
+      write(ss.str(), reinterpret_cast<const char *>(out.SegmentData()), out.SegmentSize());
     }
 
     std::stringstream ss;
@@ -97,7 +97,7 @@ int testLivePackager(int argc, char **argv) {
     }
     const std::vector<uint8_t> expected_buff = readSegment(expected_fname.c_str());
 
-    if(0 != std::memcmp(expected_buff.data(), data + out.GetInitSegmentSize(), expected_buff.size())) {
+    if(0 != std::memcmp(expected_buff.data(), out.SegmentData(), expected_buff.size())) {
       std::cout << fname << "packaged output is different" << std::endl;
       ++diff_count;
     }

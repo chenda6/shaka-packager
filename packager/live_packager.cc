@@ -60,13 +60,12 @@ public:
   }
 
   uint64_t Read(void *buffer, uint64_t size) {
-    const auto &buf= segment_.GetBuffer();
-    if (position_ >= buf.size()) {
+    if (position_ >= segment_.Size()) {
       return 0;
     }
 
-    const uint64_t bytes_to_read = std::min(size, buf.size() - position_);
-    memcpy(buffer, buf.data() + position_, bytes_to_read);
+    const uint64_t bytes_to_read = std::min(size, segment_.Size() - position_);
+    memcpy(buffer, segment_.InitSegmentData() + position_, bytes_to_read);
 
     position_ += bytes_to_read;
     return bytes_to_read;
@@ -89,16 +88,24 @@ void FullSegment::AppendData(const uint8_t *data, size_t size) {
   std::copy(data, data + size, std::back_inserter(buffer_));
 }
 
-const std::vector<uint8_t> & FullSegment::GetBuffer() const {
-  return buffer_;
+const uint8_t *FullSegment::InitSegmentData() const {
+  return buffer_.data();
 }
 
-size_t FullSegment::GetInitSegmentSize() const {
+const uint8_t *FullSegment::SegmentData() const {
+  return buffer_.data() + InitSegmentSize();
+}
+
+size_t FullSegment::InitSegmentSize() const {
   return init_segment_size_;
 }
 
-size_t FullSegment::GetSegmentSize() const {
+size_t FullSegment::SegmentSize() const {
   return buffer_.size() - init_segment_size_;
+}
+
+size_t FullSegment::Size() const {
+  return buffer_.size();
 }
 
 LivePackager::LivePackager(const LiveConfig &config)
@@ -130,7 +137,7 @@ Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
                                            uint64_t size) {
     // TODO: this gets called more than once, why?
     // TODO: this is a workaround to write this only once 
-    if(out.GetInitSegmentSize() == 0) {
+    if(out.InitSegmentSize() == 0) {
       out.SetInitSegment(reinterpret_cast<const uint8_t *>(data), size);
     }
     return size;

@@ -21,10 +21,12 @@ public:
   void SetInitSegment(const uint8_t *data, size_t size);
   void AppendData(const uint8_t *data, size_t size);
 
-  const std::vector<uint8_t> & GetBuffer() const;
+  const uint8_t *InitSegmentData() const;
+  const uint8_t *SegmentData() const;
 
-  size_t GetInitSegmentSize() const;
-  size_t GetSegmentSize() const;
+  size_t InitSegmentSize() const;
+  size_t SegmentSize() const;
+  size_t Size() const;
 
 private:
   // 'buffer' is expected to contain both the init and data segments, i.e.,
