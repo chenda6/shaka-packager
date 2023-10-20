@@ -790,7 +790,6 @@ struct TrackFragment : Box {
   std::vector<TrackFragmentRun> runs;
   bool decode_time_absent = false;
   TrackFragmentDecodeTime decode_time;
-  // TODO(dchen): is this the correct box name?
   SmoothUUID smooth_uuid;
   bool uuid_exists = false;
   std::vector<SampleGroupDescription> sample_group_descriptions;
