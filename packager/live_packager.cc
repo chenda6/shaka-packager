@@ -79,10 +79,6 @@ private:
 
 } // namespace
 
-LivePackager::LivePackager(const LiveConfig &config) 
-  : config_(config) {
-}
-
 void FullSegment::SetInitSegment(const uint8_t *data, size_t size) {
   buffer_.clear();
   std::copy(data, data + size, std::back_inserter(buffer_));
@@ -103,6 +99,10 @@ size_t FullSegment::GetInitSegmentSize() const {
 
 size_t FullSegment::GetSegmentSize() const {
   return buffer_.size() - init_segment_size_;
+}
+
+LivePackager::LivePackager(const LiveConfig &config)
+  : config_(config) {
 }
 
 LivePackager::~LivePackager() {
