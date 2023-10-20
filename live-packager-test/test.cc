@@ -113,7 +113,8 @@ int testLivePackager(int argc, char **argv) {
 
 int main(int argc, char** argv) {
   if(argc < 3) {
-    std::cerr << "Usage: " << argv[1] << "<expected_data_dir>" << "<init_segment_fname>" << "[fragment files...]" << std::endl;
+    std::cerr << "Usage: " << argv[0] << "<expected_data_dir>" << " <init_segment_fname>" << " [fragment files...]" << std::endl;
+    return 1;
   }
   // Print the packager version.
   std::cout << "Packager v" + shaka::Packager::GetLibraryVersion() + "\n";
