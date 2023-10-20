@@ -59,7 +59,8 @@ int testLivePackager(int argc, char **argv) {
   bool write_outputs(false);
 
   const int segment_files_offset(2);
-  for(int i(3); i < argc; ++i) {
+  const int segment_files_start_index(3);
+  for(int i(segment_files_start_index); i < argc; ++i) {
     std::string fname(argv[i]);
     const std::vector<uint8_t> segment_buff = readSegment(fname.c_str());
 
@@ -75,7 +76,7 @@ int testLivePackager(int argc, char **argv) {
 
     const char *data = reinterpret_cast<const char *>(out.GetBuffer().data());
     if(write_outputs) {
-      if(i == 2) {
+      if(i == segment_files_start_index) {
         write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
       }
     }
