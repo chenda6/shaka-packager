@@ -109,9 +109,6 @@ LivePackager::~LivePackager() {
 }
 
 Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
-  std::vector<uint8_t> initBuffer;
-  std::vector<uint8_t> segmentBuffer;
-
   SegmentBufferReader reader(in);
   shaka::BufferCallbackParams callback_params;
   callback_params.read_func = [&reader](const std::string &name, 
