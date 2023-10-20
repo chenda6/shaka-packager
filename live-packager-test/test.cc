@@ -44,10 +44,12 @@ std::vector<uint8_t> readSegment(const char *fname) {
 }
 
 int testLivePackager(int argc, char **argv) {
-  std::vector<uint8_t> init_buff = readSegment(argv[1]);
+  fs::path expected_output_dir(argv[1]);
+
+  std::vector<uint8_t> init_buff = readSegment(argv[2]);
 
   shaka::LiveConfig config {
-    .format = shaka::LiveConfig::OutputFormat::TS,
+    .format = shaka::LiveConfig::OutputFormat::FMP4,
     .segment_duration_sec = 5,
     .track_type = shaka::LiveConfig::TrackType::VIDEO
   };
@@ -56,7 +58,8 @@ int testLivePackager(int argc, char **argv) {
   int diff_count(0);
   bool write_outputs(false);
 
-  for(int i(2); i < argc; ++i) {
+  const int segment_files_offset(2);
+  for(int i(3); i < argc; ++i) {
     std::string fname(argv[i]);
     const std::vector<uint8_t> segment_buff = readSegment(fname.c_str());
 
@@ -77,22 +80,24 @@ int testLivePackager(int argc, char **argv) {
       }
     }
 
+    std::string ext(config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
     if(write_outputs) {
       std::stringstream ss;
-      ss << std::setw(4) << std::setfill('0') << (i - 1)
-        << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
+      ss << std::setw(4) << std::setfill('0') << (i - segment_files_offset) << ext;
       write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
     }
 
-    auto parent_path(fs::path(fname).parent_path());
-    std::string expected_fname = parent_path.string() + "/expected/" + std::to_string(i - 1) + ".m4s"; 
+    std::stringstream ss;
+    ss << std::setw(4) << std::setfill('0') << (i - segment_files_offset) << ext;
+    fs::path expected_fname = expected_output_dir / fs::path(ss.str());
     if(!fs::exists(fs::path(expected_fname))) {
+      ++diff_count;
       continue;
     }
     const std::vector<uint8_t> expected_buff = readSegment(expected_fname.c_str());
 
-    if(0 != memcmp(expected_buff.data(), data + out.GetInitSegmentSize(), expected_buff.size())) {
-      std::cout << fname << "packaged outout is different" << std::endl;
+    if(0 != std::memcmp(expected_buff.data(), data + out.GetInitSegmentSize(), expected_buff.size())) {
+      std::cout << fname << "packaged output is different" << std::endl;
       ++diff_count;
     }
   }
@@ -107,6 +112,9 @@ int testLivePackager(int argc, char **argv) {
 }
 
 int main(int argc, char** argv) {
+  if(argc < 3) {
+    std::cerr << "Usage: " << argv[1] << "<expected_data_dir>" << "<init_segment_fname>" << "[fragment files...]" << std::endl;
+  }
   // Print the packager version.
   std::cout << "Packager v" + shaka::Packager::GetLibraryVersion() + "\n";
   return testLivePackager(argc, argv);
