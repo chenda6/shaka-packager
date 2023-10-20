@@ -10,10 +10,14 @@
 #include <cstdio>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 #include <packager/live_packager.h>
+
+namespace fs = std::filesystem;
 
 void write(const std::string &fname, const char *data, size_t size) {
   if(size == 0) {
@@ -49,8 +53,12 @@ int testLivePackager(int argc, char **argv) {
   };
 
   shaka::LivePackager packager(config);
+  int diff_count(0);
+  bool write_outputs(false);
+
   for(int i(2); i < argc; ++i) {
-    const std::vector<uint8_t> segment_buff = readSegment(argv[i]);
+    std::string fname(argv[i]);
+    const std::vector<uint8_t> segment_buff = readSegment(fname.c_str());
 
     shaka::FullSegment in; 
     in.SetInitSegment(init_buff.data(), init_buff.size());
@@ -63,17 +71,39 @@ int testLivePackager(int argc, char **argv) {
     }
 
     const char *data = reinterpret_cast<const char *>(out.GetBuffer().data());
-    if(i == 2) {
-      write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
+    if(write_outputs) {
+      if(i == 2) {
+        write("init.mp4", reinterpret_cast<const char *>(data), out.GetInitSegmentSize());
+      }
     }
 
-    std::stringstream ss;
-    ss << std::setw(4) << std::setfill('0') << (i - 1)
-       << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
-    write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
+    if(write_outputs) {
+      std::stringstream ss;
+      ss << std::setw(4) << std::setfill('0') << (i - 1)
+        << (config.format == shaka::LiveConfig::OutputFormat::TS ? ".ts" : ".m4s");
+      write(ss.str(), data + out.GetInitSegmentSize(), out.GetSegmentSize());
+    }
+
+    auto parent_path(fs::path(fname).parent_path());
+    std::string expected_fname = parent_path.string() + "/expected/" + std::to_string(i - 1) + ".m4s"; 
+    if(!fs::exists(fs::path(expected_fname))) {
+      continue;
+    }
+    const std::vector<uint8_t> expected_buff = readSegment(expected_fname.c_str());
+
+    if(0 != memcmp(expected_buff.data(), data + out.GetInitSegmentSize(), expected_buff.size())) {
+      std::cout << fname << "packaged outout is different" << std::endl;
+      ++diff_count;
+    }
   }
 
-  return 0;
+  if(diff_count != 0) {
+    std::cout << "Test failed: " << diff_count << " packaged outout(s) are different" << std::endl;
+    return 1;
+  } else {
+    std::cout << "Test passed" << std::endl;
+    return 0;
+  }
 }
 
 int main(int argc, char** argv) {
