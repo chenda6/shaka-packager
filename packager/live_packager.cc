@@ -10,6 +10,7 @@
 #include <cstring>
 #include <algorithm>
 
+#include <absl/log/globals.h>
 #include <packager/packager.h>
 #include <packager/file.h>
 #include <packager/file/file_closer.h>
@@ -110,6 +111,7 @@ size_t FullSegment::Size() const {
 
 LivePackager::LivePackager(const LiveConfig &config)
   : config_(config) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kWarning);
 }
 
 LivePackager::~LivePackager() {
