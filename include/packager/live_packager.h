@@ -13,10 +13,32 @@
 
 namespace shaka {
 
-struct FullSegment {
+class Segment {
 public:
-  FullSegment() = default;
-  ~FullSegment() = default;
+  virtual ~Segment() = default;
+
+  virtual const uint8_t *Data() const = 0;
+  virtual size_t Size() const = 0;
+};
+
+
+class SegmentData final : public Segment {
+public:
+  SegmentData(const uint8_t *data, size_t size);
+  ~SegmentData() = default;
+
+  virtual const uint8_t *Data() const override;
+  virtual size_t Size() const override;
+
+private:
+  const uint8_t *data_ = nullptr;
+  const size_t size_ = 0;
+};
+
+class FullSegmentBuffer final : public Segment {
+public:
+  FullSegmentBuffer() = default;
+  ~FullSegmentBuffer() = default;
 
   void SetInitSegment(const uint8_t *data, size_t size);
   void AppendData(const uint8_t *data, size_t size);
@@ -26,7 +48,9 @@ public:
 
   size_t InitSegmentSize() const;
   size_t SegmentSize() const;
-  size_t Size() const;
+
+  virtual const uint8_t *Data() const override;
+  virtual size_t Size() const override;
 
 private:
   // 'buffer' is expected to contain both the init and data segments, i.e.,
@@ -58,7 +82,11 @@ public:
   LivePackager(const LiveConfig &config);
   ~LivePackager();
 
-  Status Package(const FullSegment &input, FullSegment &output);
+  /// Performs packaging of segment data.
+  /// @param full_segment contains the full segment data (init + media).
+  /// @param output contains the packaged segment data (init + media).
+  /// @return OK on success, an appropriate error code on failure.
+  Status Package(const Segment &full_segment, FullSegmentBuffer &output);
 
   LivePackager(const LivePackager&) = delete;
   LivePackager& operator=(const LivePackager&) = delete;

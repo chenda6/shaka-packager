@@ -64,11 +64,11 @@ int testLivePackager(int argc, char **argv) {
     std::string fname(argv[i]);
     const std::vector<uint8_t> segment_buff = readSegment(fname.c_str());
 
-    shaka::FullSegment in; 
+    shaka::FullSegmentBuffer in; 
     in.SetInitSegment(init_buff.data(), init_buff.size());
     in.AppendData(segment_buff.data(), segment_buff.size());
 
-    shaka::FullSegment out;
+    shaka::FullSegmentBuffer out;
     const auto status = packager.Package(in, out);
     if(status != shaka::Status::OK) {
       continue;

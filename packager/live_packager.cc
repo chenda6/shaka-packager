@@ -54,9 +54,9 @@ StreamDescriptors setupStreamDescriptors(const LiveConfig &config,
   return StreamDescriptors { desc };
 } 
 
-class SegmentBufferReader{
+class SegmentDataReader{
 public:
-  SegmentBufferReader(const FullSegment &segment) 
+  SegmentDataReader(const Segment &segment) 
     : segment_(segment) {
   }
 
@@ -66,47 +66,64 @@ public:
     }
 
     const uint64_t bytes_to_read = std::min(size, segment_.Size() - position_);
-    memcpy(buffer, segment_.InitSegmentData() + position_, bytes_to_read);
+    memcpy(buffer, segment_.Data() + position_, bytes_to_read);
 
     position_ += bytes_to_read;
     return bytes_to_read;
   }
 
 private:
-  const FullSegment &segment_;
+  const Segment &segment_;
   uint64_t position_ = 0;
 };
 
 } // namespace
 
-void FullSegment::SetInitSegment(const uint8_t *data, size_t size) {
+SegmentData::SegmentData(const uint8_t *data, size_t size)
+  : data_(data), size_(size) {
+
+}
+
+const uint8_t *SegmentData::Data() const {
+  return data_;
+}
+
+size_t SegmentData::Size() const {
+  return size_;
+}
+
+void FullSegmentBuffer::SetInitSegment(const uint8_t *data, size_t size) {
   buffer_.clear();
   std::copy(data, data + size, std::back_inserter(buffer_));
   init_segment_size_ = size;
 }
 
-void FullSegment::AppendData(const uint8_t *data, size_t size) {
+void FullSegmentBuffer::AppendData(const uint8_t *data, size_t size) {
   std::copy(data, data + size, std::back_inserter(buffer_));
 }
 
-const uint8_t *FullSegment::InitSegmentData() const {
+const uint8_t *FullSegmentBuffer::InitSegmentData() const {
   return buffer_.data();
 }
 
-const uint8_t *FullSegment::SegmentData() const {
+const uint8_t *FullSegmentBuffer::SegmentData() const {
   return buffer_.data() + InitSegmentSize();
 }
 
-size_t FullSegment::InitSegmentSize() const {
+size_t FullSegmentBuffer::InitSegmentSize() const {
   return init_segment_size_;
 }
 
-size_t FullSegment::SegmentSize() const {
+size_t FullSegmentBuffer::SegmentSize() const {
   return buffer_.size() - init_segment_size_;
 }
 
-size_t FullSegment::Size() const {
+size_t FullSegmentBuffer::Size() const {
   return buffer_.size();
+}
+
+const uint8_t *FullSegmentBuffer::Data() const {
+  return buffer_.data();
 }
 
 LivePackager::LivePackager(const LiveConfig &config)
@@ -117,8 +134,8 @@ LivePackager::LivePackager(const LiveConfig &config)
 LivePackager::~LivePackager() {
 }
 
-Status LivePackager::Package(const FullSegment &in, FullSegment &out) {
-  SegmentBufferReader reader(in);
+Status LivePackager::Package(const Segment &in, FullSegmentBuffer &out) {
+  SegmentDataReader reader(in);
   shaka::BufferCallbackParams callback_params;
   callback_params.read_func = [&reader](const std::string &name, 
                                         void *buffer,
