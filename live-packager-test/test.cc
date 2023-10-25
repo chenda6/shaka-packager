@@ -50,8 +50,8 @@ int testLivePackager(int argc, char **argv) {
 
   shaka::LiveConfig config {
     .format = shaka::LiveConfig::OutputFormat::FMP4,
+    .track_type = shaka::LiveConfig::TrackType::VIDEO,
     .segment_duration_sec = 5,
-    .track_type = shaka::LiveConfig::TrackType::VIDEO
   };
 
   shaka::LivePackager packager(config);
