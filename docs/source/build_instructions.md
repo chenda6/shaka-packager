@@ -12,7 +12,6 @@ for [other distros below](#notes-for-other-linux-distros).
 sudo apt-get update
 sudo apt-get install -y \
         curl \
-        libc-ares-dev \
         build-essential cmake git ninja-build python3
 ```
 
@@ -95,7 +94,7 @@ You can change other build settings with `-D` flags to CMake, for example
 you can build a shared `libpackager` instead of static by adding
 
 ```shell
--DLIBPACKAGER_SHARED="ON"
+-DBUILD_SHARED_LIBS="ON"
 ```
 
 After configuring CMake you can run the build with
@@ -126,6 +125,24 @@ build, `build/packager/Release/` for a Visual Studio release build, or
 See [Shaka Packager Documentation](https://shaka-project.github.io/shaka-packager/html/)
 on how to use `Shaka Packager`.
 
+### Installation
+
+To install Shaka Packager, run:
+
+```shell
+cmake --install build/ --strip --config Release
+```
+
+You can customize the output location with `--prefix` (default `/usr/local` on
+Linux and macOS) and the `DESTDIR` environment variable.  These are provided by
+CMake and follow standard conventions for installation.  For example, to build
+a package by installing to `foo` instead of the system root, and to use `/usr`
+instead of `/usr/local`, you could run:
+
+```shell
+DESTDIR=foo cmake --install build/ --strip --config Release --prefix=/usr
+```
+
 ### Update your checkout
 
 To update an existing checkout, you can run
@@ -153,7 +170,7 @@ Use `apk` command to install dependencies:
 ```shell
 apk add --no-cache \
         bash curl \
-        bsd-compat-headers c-ares-dev linux-headers \
+        bsd-compat-headers linux-headers \
         build-base cmake git ninja python3
 ```
 
@@ -164,7 +181,6 @@ Instead of running `sudo apt-get install` to install build dependencies, run:
 ```shell
 pacman -Suy --needed --noconfirm \
         core/which \
-        c-ares \
         cmake gcc git ninja python3
 ```
 
@@ -175,7 +191,6 @@ Same as Ubuntu.
 ```shell
 apt-get install -y \
         curl \
-        libc-ares-dev \
         build-essential cmake git ninja-build python3
 ```
 
@@ -186,7 +201,7 @@ Instead of running `sudo apt-get install` to install build dependencies, run:
 ```shell
 yum install -y \
         which \
-        c-ares-devel libatomic \
+        libatomic \
         cmake gcc-c++ git ninja-build python3
 ```
 
@@ -205,7 +220,7 @@ then same as Fedora
 ```shell
 yum install -y \
         which \
-        c-ares-devel libatomic \
+        libatomic \
         cmake gcc-c++ git ninja-build python3
 ```
 
@@ -216,7 +231,6 @@ Use `zypper` command to install dependencies:
 ```shell
 zypper in -y \
         curl which \
-        c-ares-devel \
         cmake gcc9-c++ git ninja python3
 ```
 

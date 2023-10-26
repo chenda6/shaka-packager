@@ -9,8 +9,8 @@
 # Include a module to define standard install directories.
 include(GNUInstallDirs)
 
-# Build static libs by default, or shared if LIBPACKAGER_SHARED is defined.
-if(LIBPACKAGER_SHARED)
+# Build static libs by default, or shared if BUILD_SHARED_LIBS is on.
+if(BUILD_SHARED_LIBS)
   add_definitions(-DSHARED_LIBRARY_BUILD)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -88,16 +88,9 @@ set(libpackager_sources
   live_packager.cc
   ../include/packager/packager.h
   ../include/packager/live_packager.h
-  )
+)
 
-if(LIBPACKAGER_SHARED)
-  add_library(libpackager SHARED ${libpackager_sources})
-  target_compile_definitions(libpackager PUBLIC SHAKA_IMPLEMENTATION)
-else()
-  add_library(libpackager STATIC ${libpackager_sources})
-endif()
-
-target_link_libraries(libpackager
+set(libpackager_deps
   file
   hls_builder
   media_chunking
@@ -119,9 +112,38 @@ target_link_libraries(libpackager
   string_utils
   version
 )
-# Avoid liblibpackager on Windows:
+
+# A static library target is always built.
+add_library(libpackager_static STATIC ${libpackager_sources})
+target_link_libraries(libpackager_static ${libpackager_deps})
+
+# And always installed as libpackager.a:
 if(NOT MSVC)
-  set_property(TARGET libpackager PROPERTY OUTPUT_NAME packager)
+  set_property(TARGET libpackager_static PROPERTY OUTPUT_NAME packager)
+else()
+  set_property(TARGET libpackager_static PROPERTY OUTPUT_NAME libpackager)
+endif()
+
+# A shared library target is conditional (default OFF):
+if(BUILD_SHARED_LIBS)
+  add_library(libpackager_shared SHARED ${libpackager_sources})
+  target_link_libraries(libpackager_shared ${libpackager_deps})
+  target_compile_definitions(libpackager_shared PUBLIC SHAKA_IMPLEMENTATION)
+
+  # And always installed as libpackager.so / libpackager.dll:
+  if(NOT MSVC)
+    set_property(TARGET libpackager_shared PROPERTY OUTPUT_NAME packager)
+  else()
+    set_property(TARGET libpackager_shared PROPERTY OUTPUT_NAME libpackager)
+  endif()
+
+  # If we're building a shared library, this is what the "libpackager" target
+  # aliases to.
+  add_library(libpackager ALIAS libpackager_shared)
+else()
+  # If we're not building a shared library, the "libpackager" target aliases to
+  # the static library.
+  add_library(libpackager ALIAS libpackager_static)
 endif()
 
 add_executable(packager
@@ -193,18 +215,54 @@ target_link_libraries(packager_test
   gtest
   gtest_main)
 
+list(APPEND packager_test_py_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/app/test/packager_app.py"
+  "${CMAKE_CURRENT_SOURCE_DIR}/app/test/packager_test.py"
+  "${CMAKE_CURRENT_SOURCE_DIR}/app/test/test_env.py")
+
+list(APPEND packager_test_py_output
+  "${CMAKE_CURRENT_BINARY_DIR}/packager_app.py"
+  "${CMAKE_CURRENT_BINARY_DIR}/packager_test.py"
+  "${CMAKE_CURRENT_BINARY_DIR}/test_env.py")
+
+add_custom_command(
+  OUTPUT ${packager_test_py_output}
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/app/test/packager_app.py ${CMAKE_CURRENT_BINARY_DIR}/packager_app.py
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/app/test/packager_test.py ${CMAKE_CURRENT_BINARY_DIR}/packager_test.py
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/app/test/test_env.py ${CMAKE_CURRENT_BINARY_DIR}/test_env.py
+  DEPENDS ${packager_test_py_sources}
+)
+
+add_custom_target(packager_test_py_copy ALL
+  DEPENDS ${packager_test_py_output} packager
+  SOURCES ${packager_test_py_sources}
+)
+
+if(NOT SKIP_INTEGRATION_TESTS)
+  add_test (NAME packager_test_py
+    COMMAND ${PYTHON_EXECUTABLE} packager_test.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+endif()
+
 configure_file(packager.pc.in packager.pc @ONLY)
 
+# Always install the binaries.
+install(TARGETS mpd_generator packager)
 
-install(DIRECTORY ../include/packager
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-install(TARGETS mpd_generator packager libpackager)
-
+# Always install the python tools.
 install(PROGRAMS ${CMAKE_BINARY_DIR}/pssh-box.py
   DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY ${CMAKE_BINARY_DIR}/pssh-box-protos
   DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(FILES ${CMAKE_BINARY_DIR}/packager/packager.pc
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+# With shared libraries, also install the library, headers, and pkgconfig.
+# The static library isn't usable as a standalone because it doesn't include
+# its static dependencies (zlib, absl, etc).
+if(BUILD_SHARED_LIBS)
+  install(TARGETS libpackager_shared)
+  install(DIRECTORY ../include/packager
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(FILES ${CMAKE_BINARY_DIR}/packager/packager.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
